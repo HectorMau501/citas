@@ -1,31 +1,53 @@
 //Componentes de React
-import React, {useState} from 'react' //Hooks es el de useState. Regla 1 de hooks se coloca en la parte principal de los componentes
+import React, {useState} from 'react'; //Hooks es el de useState. Regla 1 de hooks se coloca en la parte principal de los componentes
 import {
   SafeAreaView,
   View, //View se comporta como un div en html y es necesario porque no vas a poder retornar dos text
   Text,
   StyleSheet, //Es como el css pero en React
-  Button,
   Pressable, //Este tienes mas tipos de eventos que button, como dejar presionado, presionado y soltar y asi
   Modal, //Es para desplegar una ventana emergente.
   FlatList,
-} from 'react-native'
-import Formulario from './src/Formulario'
-import Paciente from './src/Paciente'
+  Alert,
+} from 'react-native';
+import Formulario from './src/components/Formulario';
+import Paciente from './src/components/Paciente';
+import InformacionPaciente from './src/components/InformacionPaciente';
 
 //Siempre vamos a tener un return en nuestros componentes sino nos va a marca error
 const App = () => {
   //Aqui se  colocan los hooks
-  const [modalVisible, setModalVisible] = useState(false) //Asi se declaran los hooks, otra regla de los hooks es que no se puede regitrar si esta en una condicion
-  const [pacientes, setPacientes] = useState([])
-  const [paciente, setPaciente] = useState({})
+  const [modalVisible, setModalVisible] = useState(false); //Asi se declaran los hooks, otra regla de los hooks es que no se puede regitrar si esta en una condicion
+  const [pacientes, setPacientes] = useState([]);
+  const [paciente, setPaciente] = useState({});
+  const [modalPaciente, setModalPaciente] = useState(false);
 
   // Antes del return aqui se pone todo tipo de codigo de javaScript
 
   const pacienteEditar = id => {
-    const pacienteEditar = pacientes.filter(paciente => paciente.id === id)
+    const pacienteEditar = pacientes.filter(paciente => paciente.id === id);
+    setPaciente(pacienteEditar[0]);
+  };
 
-    setPaciente(pacienteEditar[0])
+  const pacienteEliminar = id => {
+    Alert.alert(
+      'Deseas Eliminar Este Paciente?',
+      'Un paciente eliminado no se puede recuperar',
+      [
+        {text: 'Cancelar'},
+        {text: 'Si Eliminar', onPress: () => {
+            const pacienteActualizados = pacientes.filter(
+              //Filter nos permite sacar un elemento de un arreglo
+              pacientesState => pacientesState.id !== id); //Aqui estamos iterando sobre cada paciente, osea me va a traer solo los que son distintos del id, osea todos los demas
+            setPacientes(pacienteActualizados);
+          }}
+      ],
+    );
+  };
+
+  //Funcion para 
+  const cerrarModal = () => {
+    setModalVisible(false)
   }
 
   return (
@@ -38,51 +60,61 @@ const App = () => {
         Administrador de Citas {''}
         <Text style={styles.tituloBold}>Veterinarias</Text>
       </Text>
-      <Pressable style={styles.btnNuevaCita}>
+
+      <Pressable 
+      style={styles.btnNuevaCita}
+      onPress={() => setModalVisible(!modalVisible)}
+      >
         <Text
           style={styles.btnTextoNuevaCita}
-          onPress={() => setModalVisible(!modalVisible)}>
-          Nueva Cita
-        </Text>
+          >Nueva Cita </Text>
       </Pressable>
 
-      <Modal
-        animationType="slide"
-        visible={modalVisible} //animation y visible es para cambiar al modal
-      >
-        {/* <Text>Desde Modal</Text> */}
-      </Modal>
-
       {pacientes.length === 0 ? 
-        <Text style={styles.noPacientes}>No hay pacientes aun</Text>
-       : 
+        <Text style={styles.noPacientes}>No hay pacientes aun</Text> : 
         <FlatList //FlatList es para mostrar las variables
-        style={styles.listado}
+          style={styles.listado}
           data={pacientes} //data va hacer referecia a los datos que va a redendizar
-          keyExtractor={item => item.id} //Va a buscar en el arreglo de pacientes o en los datos que le diste en el flatlist o bien iterar sobre los elementos
+          keyExtractor={(item) => item.id} //Va a buscar en el arreglo de pacientes o en los datos que le diste en el flatlist o bien iterar sobre los elementos
           renderItem={({item}) => {
             //El componentes que se van a mostrar cuando comience a irerar sobre los elementos
-            return(
-              <Paciente 
-              item={item}
-              setModalVisible={setModalVisible}
-              pacienteEditar={pacienteEditar}
+            return (
+              <Paciente
+                item={item}
+                setModalVisible={setModalVisible}
+                setPaciente={setPaciente}
+                pacienteEditar={pacienteEditar}
+                pacienteEliminar={pacienteEliminar}
+                setModalPaciente={setModalPaciente}
               />
-            ) 
+            );
           }}
         />
       }
 
-      <Formulario
-        // prob se llama modalVisible igual que la variable
-        // los prob se pasan del hijo al padre
-        // sirven para que los state puedan estar disponibles en otros componentes hijos
-        modalVisible={modalVisible} //Este es un prob, estoy pasando la variable que es nuestro state
-        pacientes={pacientes}
-        setModalVisible={setModalVisible}
-        setPacientes={setPacientes}
-        paciente={paciente}
-      />
+      {modalVisible && (
+        <Formulario
+          cerrarModal={cerrarModal}
+          // prob se llama modalVisible igual que la variable
+          // los prob se pasan del hijo al padre
+          // sirven para que los state puedan estar disponibles en otros componentes hijos
+          // modalVisible={modalVisible} //Este es un prob, estoy pasando la variable que es nuestro state
+          pacientes={pacientes}
+          // setModalVisible={setModalVisible}
+          setPacientes={setPacientes}
+          paciente={paciente}
+          setPaciente={setPaciente}
+        />
+      )}
+
+      <Modal 
+      visible={modalPaciente} animationType="slide">
+        <InformacionPaciente
+          paciente={paciente}
+          setPaciente={setPaciente}
+          setModalPaciente={setModalPaciente}
+        />
+      </Modal>
 
       {/* <Button  */}
       {/* title='Nueva Cita' */}
@@ -91,8 +123,8 @@ const App = () => {
       {/* }} //Para asociar un evento con los botones, andrentro del podras tener javaScript */}
       {/* ></Button> */}
     </SafeAreaView>
-  )
-}
+  );
+};
 
 //Por buenas practicas asi se declara la variable
 const styles = StyleSheet.create({
@@ -102,10 +134,9 @@ const styles = StyleSheet.create({
   },
   titulo: {
     textAlign: 'center',
-    textTransform: 'uppercase',
-    fontSize: 20,
+    fontSize: 30,
     color: '#374151',
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   tituloBold: {
     fontWeight: '900',
@@ -132,8 +163,8 @@ const styles = StyleSheet.create({
   },
   listado: {
     marginTop: 50,
-    marginHorizontal: 30
+    marginHorizontal: 30,
   },
-})
+});
 
-export default App
+export default App;

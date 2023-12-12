@@ -14,13 +14,14 @@ import DatePicker from 'react-native-date-picker';
 
 const Formulario = ({
   modalVisible,
-  setModalVisible,
+  cerrarModal,
   pacientes,
   setPacientes,
-  paciente: pacienteObj
+  paciente: pacienteObj,
+  setPaciente: setPacienteApp,
 }) => {
-  const [paciente, setPaciente] = useState('');
   const [id, setId] = useState('');
+  const [paciente, setPaciente] = useState('');
   const [propietario, setPropietario] = useState('');
   const [email, setEmail] = useState('');
   const [telefono, setTelefono] = useState('');
@@ -28,16 +29,16 @@ const Formulario = ({
   const [sintomas, setSintomas] = useState('');
 
   useEffect(() => {
-    if(Object.keys(pacienteObj).length > 0){
-      setId(pacienteObj.id)
-      setPaciente(pacienteObj.paciente)
-      setPropietario(pacienteObj.propietario)
-      setEmail(pacienteObj.email)
-      setTelefono(pacienteObj.telefono)
-      setFecha(pacienteObj.fecha)
-      setSintomas(pacienteObj.sintomas)
+    if (Object.keys(pacienteObj).length > 0) {
+      setId(pacienteObj.id);
+      setPaciente(pacienteObj.paciente);
+      setPropietario(pacienteObj.propietario);
+      setEmail(pacienteObj.email);
+      setTelefono(pacienteObj.telefono);
+      setFecha(pacienteObj.fecha);
+      setSintomas(pacienteObj.sintomas);
     }
-  }, [pacienteObj])
+  }, [pacienteObj]); //Le pasamos el objeto para que se este actualizando
 
   //Hook useEffect si declaramos un state podemos tener un useEffect que este revisando cuando aya cambios en este state
   //Sirve ejecutarse automaticamente cuando el componentes esta listo,  colocar codigo para consultar una API o LocalStorage
@@ -54,8 +55,8 @@ const Formulario = ({
       return; //Es importante el return ya que sino va a continuar con el proceso y va a agregar
     }
 
+    // Revisar si es un registro nuevo o edición
     const nuevoPaciente = {
-      id: Date.now(), //Sirve para retornar valores diferentes
       paciente,
       propietario,
       email,
@@ -63,9 +64,25 @@ const Formulario = ({
       fecha,
       sintomas,
     };
-    setPacientes([...pacientes, nuevoPaciente]);
-    setModalVisible(!modalVisible);
 
+    //Revisar si es un registro nuevo o edicion
+    if (id) {
+      //Editando
+      nuevoPaciente.id = id;
+
+      const pacienteActualizados = pacientes.map(pacienteState =>
+        pacienteState.id === nuevoPaciente.id ? nuevoPaciente : pacienteState);
+      setPacientes(pacienteActualizados);
+      setPacienteApp({});
+    } else {
+      //Nuevo Registro
+      nuevoPaciente.id = Date.now();
+      setPacientes([...pacientes, nuevoPaciente]); //Esta es la que agrega nuevo paciente
+    }
+
+    //Esto se encarga de recetiar el formulario
+    cerrarModal();
+    setId('')
     setPaciente(''); //Para recetear
     setPropietario('');
     setEmail('');
@@ -81,14 +98,24 @@ const Formulario = ({
     >
       <SafeAreaView style={styles.contenido}>
         <ScrollView>
-          <Text style={styles.titulo}>
-            Nueva {''}
+          <Text style={styles.titulo}
+          >{pacienteObj.id ? 'Editar' : 'Nueva'} {''}
             <Text style={styles.tituloBold}>Cita</Text>
           </Text>
 
           <Pressable
             style={styles.btnCancelar}
-            onLongPress={() => setModalVisible(!modalVisible)}>
+            onLongPress={() => {
+              cerrarModal();
+              setPacienteApp({});
+              setId('')
+              setPaciente(''); //Para recetear
+              setPropietario('');
+              setEmail('');
+              setTelefono('');
+              setFecha(new Date());
+              setSintomas('');
+            }}>
             <Text style={styles.btnCancelarTexto}>X Cancelar</Text>
           </Pressable>
 
@@ -167,8 +194,10 @@ const Formulario = ({
           </View>
 
           <Pressable style={styles.btnNuevaCita} onPress={handleCita}>
-            <Text style={styles.btnNuevaCitaTexto}>Agregar Paciente</Text>
+            <Text style={styles.btnNuevaCitaTexto}>
+              {pacienteObj.id ? 'Editar' : 'Agregar'} Paciente</Text>
           </Pressable>
+
         </ScrollView>
       </SafeAreaView>
     </Modal>
@@ -196,24 +225,24 @@ const styles = StyleSheet.create({
     marginHorizontal: 30,
     padding: 15,
     borderRadius: 10,
-    textTransform: 'uppercase',
   },
   btnCancelarTexto: {
     color: '#FFF',
     textAlign: 'center',
     fontWeight: '900',
     fontSize: 16,
+    textTransform: 'uppercase',
   },
   campo: {
     marginTop: 10,
-    marginHorizontal: 30,
+    marginHorizontal: 30
   },
   label: {
     color: '#FFF',
     marginBottom: 10,
     margintop: 15,
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: '600'
   },
   input: {
     backgroundColor: '#FFF',
@@ -226,7 +255,6 @@ const styles = StyleSheet.create({
   fechaContenedor: {
     backgroundColor: '#FFF',
     borderRadius: 10,
-    padding: 5,
   },
   btnNuevaCita: {
     marginVertical: 50,
@@ -240,7 +268,7 @@ const styles = StyleSheet.create({
     color: '#5827A4',
     textTransform: 'uppercase',
     fontWeight: '900',
-    fontSize: 16,
+    fontSize: 16
   },
 });
 
